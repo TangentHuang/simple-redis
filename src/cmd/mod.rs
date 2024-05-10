@@ -69,6 +69,7 @@ pub struct CmdHSet {
 #[derive(Debug)]
 pub struct CmdHGetAll {
     key: String,
+    sort: bool,
 }
 
 #[derive(Debug)]

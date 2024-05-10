@@ -47,6 +47,17 @@ impl Deref for BulkString {
     }
 }
 
+impl From<String> for BulkString {
+    fn from(value: String) -> Self {
+        BulkString(value.into_bytes())
+    }
+}
+impl From<&str> for BulkString {
+    fn from(value: &str) -> Self {
+        BulkString(value.as_bytes().to_vec())
+    }
+}
+
 impl From<&[u8]> for BulkString {
     fn from(value: &[u8]) -> Self {
         BulkString(value.to_vec())
