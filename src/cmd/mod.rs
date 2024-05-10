@@ -8,6 +8,7 @@ use enum_dispatch::enum_dispatch;
 use lazy_static::lazy_static;
 use thiserror::Error;
 
+//also can use onecell
 lazy_static! {
     static ref RESP_OK: RespFrame = SimpleString::new("OK").into();
 }
@@ -88,7 +89,7 @@ impl TryFrom<RespArray> for Command {
     type Error = CommandError;
     fn try_from(v: RespArray) -> Result<Self, Self::Error> {
         match v.first() {
-            Some(RespFrame::BulkString(ref cmd)) => match cmd.0.as_slice() {
+            Some(RespFrame::BulkString(ref cmd)) => match cmd.as_ref() {
                 b"get" => Ok(CmdGet::try_from(v)?.into()),
                 b"set" => Ok(CmdSet::try_from(v)?.into()),
                 b"hget" => Ok(CmdHGet::try_from(v)?.into()),
