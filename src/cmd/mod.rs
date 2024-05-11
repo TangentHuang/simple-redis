@@ -1,14 +1,19 @@
+mod command;
 mod echo;
-mod hmap;
-mod map;
+mod get;
+mod hget;
+mod hgetall;
+mod hset;
+mod set;
 
 use crate::backend;
 use crate::backend::Backend;
+pub use crate::cmd::command::Command;
+pub use crate::cmd::{echo::Echo, get::Get, hget::HGet, hgetall::HGetAll, hset::HSet, set::Set};
 use crate::resp::{RespArray, RespError, RespFrame, SimpleString};
 use enum_dispatch::enum_dispatch;
 use lazy_static::lazy_static;
 use thiserror::Error;
-
 //also can use onecell
 lazy_static! {
     static ref RESP_OK: RespFrame = SimpleString::new("OK").into();
@@ -31,89 +36,8 @@ pub trait CommandExecutor {
     fn execute(self, backend: &backend::Backend) -> RespFrame;
 }
 
-#[enum_dispatch(CommandExecutor)]
-#[derive(Debug)]
-pub enum Command {
-    Get(CmdGet),
-    Set(CmdSet),
-    HGet(CmdHGet),
-    HSet(CmdHSet),
-    HGetAll(CmdHGetAll),
-    //ECHO
-    Echo(CmdEcho),
-
-    // unrecognized command
-    Unrecognized(Unrecognized),
-}
-
-#[derive(Debug)]
-pub struct CmdGet {
-    key: String,
-}
-
-#[derive(Debug)]
-pub struct CmdSet {
-    key: String,
-    value: RespFrame,
-}
-
-#[derive(Debug)]
-pub struct CmdHGet {
-    key: String,
-    field: String,
-}
-
-#[derive(Debug)]
-pub struct CmdHSet {
-    key: String,
-    field: String,
-    value: RespFrame,
-}
-
-#[derive(Debug)]
-pub struct CmdHGetAll {
-    key: String,
-    sort: bool,
-}
-
-#[derive(Debug)]
-pub struct CmdEcho {
-    value: String,
-}
-
 #[derive(Debug)]
 pub struct Unrecognized;
-
-impl TryFrom<RespFrame> for Command {
-    type Error = CommandError;
-    fn try_from(value: RespFrame) -> Result<Self, Self::Error> {
-        match value {
-            RespFrame::Array(array) => Command::try_from(array),
-            _ => Err(CommandError::InvalidCommand(
-                "Command must be array".to_string(),
-            )),
-        }
-    }
-}
-impl TryFrom<RespArray> for Command {
-    type Error = CommandError;
-    fn try_from(v: RespArray) -> Result<Self, Self::Error> {
-        match v.first() {
-            Some(RespFrame::BulkString(ref cmd)) => match cmd.as_ref() {
-                b"get" => Ok(CmdGet::try_from(v)?.into()),
-                b"set" => Ok(CmdSet::try_from(v)?.into()),
-                b"hget" => Ok(CmdHGet::try_from(v)?.into()),
-                b"hset" => Ok(CmdHSet::try_from(v)?.into()),
-                b"hgetall" => Ok(CmdHGetAll::try_from(v)?.into()),
-                b"echo" => Ok(CmdEcho::try_from(v)?.into()),
-                _ => Ok(Unrecognized.into()),
-            },
-            _ => Err(CommandError::InvalidCommand(
-                "Command must have a BulkString as the first argument".to_string(),
-            )),
-        }
-    }
-}
 
 impl CommandExecutor for Unrecognized {
     fn execute(self, _: &Backend) -> RespFrame {
@@ -162,6 +86,27 @@ fn extract_args(value: RespArray, start: usize) -> Result<Vec<RespFrame>, Comman
 
 #[cfg(test)]
 mod test {
+    use crate::cmd::command::Command;
+    use crate::cmd::CommandExecutor;
+    use crate::resp::{RespArray, RespDecode, RespFrame, RespNull};
+    use crate::Backend;
+    use anyhow::Result;
+    use bytes::BytesMut;
+
     #[test]
-    fn test_validate_command() {}
+    fn test_command() -> Result<()> {
+        let mut buf = BytesMut::new();
+        buf.extend_from_slice(b"*2\r\n$3\r\nget\r\n$5\r\nhello\r\n");
+
+        let frame = RespArray::decode(&mut buf)?;
+
+        let cmd: Command = frame.try_into()?;
+
+        let backend = Backend::new();
+
+        let ret = cmd.execute(&backend);
+        assert_eq!(ret, RespFrame::Null(RespNull));
+
+        Ok(())
+    }
 }
