@@ -1,4 +1,4 @@
-use crate::cmd::{CommandError, Echo, Get, HGet, HGetAll, HSet, Set, Unrecognized};
+use crate::cmd::{CommandError, Echo, Get, HGet, HGetAll, HMGet, HSet, Set, Unrecognized};
 use crate::resp::{RespArray, RespFrame};
 use enum_dispatch::enum_dispatch;
 
@@ -12,7 +12,8 @@ pub enum Command {
     HGetAll(HGetAll),
     //ECHO
     Echo(Echo),
-
+    // HMGET
+    HMGet(HMGet),
     // unrecognized command
     Unrecognized(Unrecognized),
 }
@@ -32,15 +33,18 @@ impl TryFrom<RespArray> for Command {
     type Error = CommandError;
     fn try_from(v: RespArray) -> Result<Self, Self::Error> {
         match v.first() {
-            Some(RespFrame::BulkString(ref cmd)) => match cmd.as_ref() {
-                b"get" => Ok(Get::try_from(v)?.into()),
-                b"set" => Ok(Set::try_from(v)?.into()),
-                b"hget" => Ok(HGet::try_from(v)?.into()),
-                b"hset" => Ok(HSet::try_from(v)?.into()),
-                b"hgetall" => Ok(HGetAll::try_from(v)?.into()),
-                b"echo" => Ok(Echo::try_from(v)?.into()),
-                _ => Ok(Unrecognized.into()),
-            },
+            Some(RespFrame::BulkString(ref cmd)) => {
+                match cmd.as_ref().to_ascii_lowercase().as_slice() {
+                    b"get" => Ok(Get::try_from(v)?.into()),
+                    b"set" => Ok(Set::try_from(v)?.into()),
+                    b"hget" => Ok(HGet::try_from(v)?.into()),
+                    b"hset" => Ok(HSet::try_from(v)?.into()),
+                    b"hgetall" => Ok(HGetAll::try_from(v)?.into()),
+                    b"echo" => Ok(Echo::try_from(v)?.into()),
+                    b"hmget" => Ok(HMGet::try_from(v)?.into()),
+                    _ => Ok(Unrecognized.into()),
+                }
+            }
             _ => Err(CommandError::InvalidCommand(
                 "Command must have a BulkString as the first argument".to_string(),
             )),

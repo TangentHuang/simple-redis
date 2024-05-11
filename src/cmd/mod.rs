@@ -3,13 +3,16 @@ mod echo;
 mod get;
 mod hget;
 mod hgetall;
+mod hmget;
 mod hset;
 mod set;
 
 use crate::backend;
 use crate::backend::Backend;
 pub use crate::cmd::command::Command;
-pub use crate::cmd::{echo::Echo, get::Get, hget::HGet, hgetall::HGetAll, hset::HSet, set::Set};
+pub use crate::cmd::{
+    echo::Echo, get::Get, hget::HGet, hgetall::HGetAll, hmget::HMGet, hset::HSet, set::Set,
+};
 use crate::resp::{RespArray, RespError, RespFrame, SimpleString};
 use enum_dispatch::enum_dispatch;
 use lazy_static::lazy_static;
@@ -50,7 +53,7 @@ fn validate_command(
     names: &[&'static str],
     n_args: usize,
 ) -> Result<(), CommandError> {
-    if value.len() != n_args + names.len() {
+    if value.len() < n_args + names.len() {
         return Err(CommandError::InvalidArgument(format!(
             "{} command must have exactly {} argument",
             names.join(" "),
