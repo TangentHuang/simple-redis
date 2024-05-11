@@ -1,6 +1,6 @@
 use crate::resp::{
-    calc_total_length, parse_length, RespDecode, RespEncode, RespError, RespFrame, BUF_CAPACITY,
-    CRLF_LEN,
+    calc_total_length, extract_fixed_data, parse_length, RespDecode, RespEncode, RespError,
+    RespFrame, BUF_CAPACITY, CRLF_LEN,
 };
 use bytes::{Buf, BytesMut};
 use std::ops::Deref;
@@ -17,6 +17,9 @@ impl RespArray {
 // - array: "*<number-of-elements>\r\n<element-1>...<element-n>"
 impl RespEncode for RespArray {
     fn encode(self) -> Vec<u8> {
+        if self.0.is_empty() {
+            return "*-1\r\n".into();
+        }
         let mut buf = Vec::with_capacity(BUF_CAPACITY);
         buf.extend_from_slice(&format!("*{}\r\n", self.len()).into_bytes());
         for frame in self.0 {
@@ -30,6 +33,14 @@ impl RespDecode for RespArray {
     const PREFIX: &'static str = "*";
     fn decode(buf: &mut BytesMut) -> Result<Self, RespError> {
         let (end, len) = parse_length(buf, Self::PREFIX)?;
+        if len == -1 {
+            extract_fixed_data(buf, "*-1\r\n", "NullArray")?;
+            return Ok(RespArray::new(vec![]));
+        }
+        if len < -1 {
+            return Err(RespError::InvalidFrameLength(len));
+        }
+        let len = len as usize;
         let total_len = calc_total_length(buf, end, len, Self::PREFIX)?;
         if buf.len() < total_len {
             return Err(RespError::NotComplete);
@@ -46,6 +57,13 @@ impl RespDecode for RespArray {
 
     fn expect_length(buf: &[u8]) -> Result<usize, RespError> {
         let (end, len) = parse_length(buf, Self::PREFIX)?;
+        if len == -1 {
+            return Ok(4);
+        }
+        if len < -1 {
+            return Err(RespError::InvalidFrameLength(len));
+        }
+        let len = len as usize;
         calc_total_length(buf, end, len, Self::PREFIX)
     }
 }
@@ -90,6 +108,24 @@ mod test {
         buf.extend_from_slice(b"$5\r\nhello\r\n");
         let frame = RespArray::decode(&mut buf)?;
         assert_eq!(frame, RespArray::new([b"set".into(), b"hello".into()]));
+
+        Ok(())
+    }
+
+    #[test]
+    fn test_null_array_encode() {
+        let frame = RespArray::new(vec![]);
+        assert_eq!(frame.encode(), b"*-1\r\n");
+    }
+
+    #[test]
+    fn test_null_array_decode() -> anyhow::Result<()> {
+        let mut buf = BytesMut::new();
+        buf.extend_from_slice(b"*-1\r\n");
+
+        let frame = RespArray::decode(&mut buf)?;
+        let expected = RespArray::new(vec![]);
+        assert_eq!(frame, expected);
 
         Ok(())
     }
