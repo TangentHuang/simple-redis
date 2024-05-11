@@ -84,6 +84,9 @@ mod test {
     fn test_bulk_string_encode() {
         let frame: RespFrame = BulkString::new(b"Hello, World!").into();
         assert_eq!(frame.encode(), b"$13\r\nHello, World!\r\n");
+
+        let frame: RespFrame = BulkString::new(b"\"Hello, World!\"").into();
+        assert_eq!(frame.encode(), b"$15\r\n\"Hello, World!\"\r\n")
     }
 
     #[test]

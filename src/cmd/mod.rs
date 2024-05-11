@@ -1,3 +1,4 @@
+mod echo;
 mod hmap;
 mod map;
 
@@ -38,6 +39,9 @@ pub enum Command {
     HGet(CmdHGet),
     HSet(CmdHSet),
     HGetAll(CmdHGetAll),
+    //ECHO
+    Echo(CmdEcho),
+
     // unrecognized command
     Unrecognized(Unrecognized),
 }
@@ -73,6 +77,11 @@ pub struct CmdHGetAll {
 }
 
 #[derive(Debug)]
+pub struct CmdEcho {
+    value: String,
+}
+
+#[derive(Debug)]
 pub struct Unrecognized;
 
 impl TryFrom<RespFrame> for Command {
@@ -96,6 +105,7 @@ impl TryFrom<RespArray> for Command {
                 b"hget" => Ok(CmdHGet::try_from(v)?.into()),
                 b"hset" => Ok(CmdHSet::try_from(v)?.into()),
                 b"hgetall" => Ok(CmdHGetAll::try_from(v)?.into()),
+                b"echo" => Ok(CmdEcho::try_from(v)?.into()),
                 _ => Ok(Unrecognized.into()),
             },
             _ => Err(CommandError::InvalidCommand(
