@@ -10,7 +10,7 @@ pub struct HGetAll {
 
 impl CommandExecutor for HGetAll {
     fn execute(self, backend: &Backend) -> RespFrame {
-        let hmap = backend.hmap.get(&self.key);
+        let hmap = backend.hgetall(&self.key);
         match hmap {
             Some(hmap) => {
                 let mut data = Vec::with_capacity(hmap.len());

@@ -1,4 +1,7 @@
-use crate::cmd::{CommandError, Echo, Get, HGet, HGetAll, HMGet, HSet, Set, Unrecognized};
+use crate::cmd::sadd::SAdd;
+use crate::cmd::{
+    CommandError, Echo, Get, HGet, HGetAll, HMGet, HSet, Set, SisMember, Unrecognized,
+};
 use crate::resp::{RespArray, RespFrame};
 use enum_dispatch::enum_dispatch;
 
@@ -14,6 +17,10 @@ pub enum Command {
     Echo(Echo),
     // HMGET
     HMGet(HMGet),
+    // SADD
+    SAdd(SAdd),
+    // SISMEMBER
+    SisMember(SisMember),
     // unrecognized command
     Unrecognized(Unrecognized),
 }
@@ -42,6 +49,8 @@ impl TryFrom<RespArray> for Command {
                     b"hgetall" => Ok(HGetAll::try_from(v)?.into()),
                     b"echo" => Ok(Echo::try_from(v)?.into()),
                     b"hmget" => Ok(HMGet::try_from(v)?.into()),
+                    b"sadd" => Ok(SAdd::try_from(v)?.into()),
+                    b"sismember" => Ok(SisMember::try_from(v)?.into()),
                     _ => Ok(Unrecognized.into()),
                 }
             }

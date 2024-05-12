@@ -75,7 +75,7 @@ mod test {
         .into();
         assert_eq!(
             frame.encode(),
-            b"~2\r\n*2\r\n:+1234\r\n#t\r\n$5\r\nworld\r\n"
+            b"~2\r\n*2\r\n:1234\r\n#t\r\n$5\r\nworld\r\n"
         );
     }
     #[test]

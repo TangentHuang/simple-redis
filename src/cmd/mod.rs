@@ -5,13 +5,16 @@ mod hget;
 mod hgetall;
 mod hmget;
 mod hset;
+mod sadd;
 mod set;
+mod sismember;
 
 use crate::backend;
 use crate::backend::Backend;
 pub use crate::cmd::command::Command;
 pub use crate::cmd::{
-    echo::Echo, get::Get, hget::HGet, hgetall::HGetAll, hmget::HMGet, hset::HSet, set::Set,
+    echo::Echo, get::Get, hget::HGet, hgetall::HGetAll, hmget::HMGet, hset::HSet, sadd::SAdd,
+    set::Set, sismember::SisMember,
 };
 use crate::resp::{RespArray, RespError, RespFrame, SimpleString};
 use enum_dispatch::enum_dispatch;

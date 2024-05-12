@@ -4,8 +4,7 @@ use bytes::BytesMut;
 // - integer: ":[<+|->]<value>\r\n"
 impl RespEncode for i64 {
     fn encode(self) -> Vec<u8> {
-        let sign = if self >= 0 { "+" } else { "" };
-        format!(":{}{}\r\n", sign, self).into_bytes()
+        format!(":{}\r\n", self).into_bytes()
     }
 }
 
@@ -31,7 +30,7 @@ mod test {
     #[test]
     fn test_integer_encode() {
         let frame: RespFrame = 123i64.into();
-        assert_eq!(frame.encode(), b":+123\r\n");
+        assert_eq!(frame.encode(), b":123\r\n");
 
         let frame: RespFrame = (-123i64).into();
         assert_eq!(frame.encode(), b":-123\r\n");
@@ -40,7 +39,7 @@ mod test {
     #[test]
     fn test_integer_decode() -> anyhow::Result<()> {
         let mut buf = BytesMut::new();
-        buf.extend_from_slice(b":+123\r\n");
+        buf.extend_from_slice(b":123\r\n");
 
         let frame = i64::decode(&mut buf)?;
         assert_eq!(frame, 123);

@@ -90,7 +90,7 @@ mod test {
         .into();
         assert_eq!(
             frame.encode(),
-            b"*4\r\n+OK\r\n-Error message\r\n:+123\r\n$13\r\nHello, World!\r\n"
+            b"*4\r\n+OK\r\n-Error message\r\n:123\r\n$13\r\nHello, World!\r\n"
         );
     }
     #[test]

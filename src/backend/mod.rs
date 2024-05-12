@@ -1,15 +1,16 @@
 use crate::resp::RespFrame;
-use dashmap::DashMap;
+use dashmap::{DashMap, DashSet};
 use std::ops::Deref;
 use std::sync::Arc;
 
-#[derive(Debug, Clone)]
+#[derive(Clone, Debug)]
 pub struct Backend(Arc<BackendInner>);
 
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 pub struct BackendInner {
     map: DashMap<String, RespFrame>,
-    pub(crate) hmap: DashMap<String, DashMap<String, RespFrame>>,
+    hmap: DashMap<String, DashMap<String, RespFrame>>,
+    set: DashMap<String, DashSet<String>>,
 }
 
 impl Deref for Backend {
@@ -30,6 +31,7 @@ impl Default for BackendInner {
         Self {
             map: DashMap::new(),
             hmap: DashMap::new(),
+            set: DashMap::new(),
         }
     }
 }
@@ -59,5 +61,29 @@ impl Backend {
 
     pub fn hgetall(&self, key: &str) -> Option<DashMap<String, RespFrame>> {
         self.hmap.get(key).map(|v| v.clone())
+    }
+
+    pub fn sismember(&self, key: &str, value: &str) -> bool {
+        self.set
+            .get(key)
+            .and_then(|v| v.get(value).map(|_| true))
+            .unwrap_or(false)
+    }
+    pub fn insert_set(&self, key: String, values: Vec<String>) {
+        let set = self.set.get_mut(&key);
+        match set {
+            Some(set) => {
+                for value in values {
+                    (*set).insert(value);
+                }
+            }
+            None => {
+                let new_set = DashSet::new();
+                for value in values {
+                    new_set.insert(value);
+                }
+                self.set.insert(key.to_string(), new_set);
+            }
+        }
     }
 }
