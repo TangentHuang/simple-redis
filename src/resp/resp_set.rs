@@ -1,5 +1,5 @@
 use crate::resp::{
-    calc_total_length, parse_length, RespDecode, RespEncode, RespError, RespFrame, BUF_CAPACITY,
+    calc_total_length, parse_length, RespDecode, RespEncode, RespError, RespFrame, BUF_CAP,
     CRLF_LEN,
 };
 use bytes::{Buf, BytesMut};
@@ -18,7 +18,7 @@ impl RespSet {
 
 impl RespEncode for RespSet {
     fn encode(self) -> Vec<u8> {
-        let mut buf = Vec::with_capacity(BUF_CAPACITY);
+        let mut buf = Vec::with_capacity(BUF_CAP);
         buf.extend_from_slice(&format!("~{}\r\n", self.len()).into_bytes());
         for frame in self.0 {
             buf.extend_from_slice(&frame.encode());

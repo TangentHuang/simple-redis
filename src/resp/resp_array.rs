@@ -1,6 +1,6 @@
 use crate::resp::{
     calc_total_length, extract_fixed_data, parse_length, RespDecode, RespEncode, RespError,
-    RespFrame, BUF_CAPACITY, CRLF_LEN,
+    RespFrame, BUF_CAP, CRLF_LEN,
 };
 use bytes::{Buf, BytesMut};
 use std::ops::Deref;
@@ -20,7 +20,7 @@ impl RespEncode for RespArray {
         if self.0.is_empty() {
             return "*-1\r\n".into();
         }
-        let mut buf = Vec::with_capacity(BUF_CAPACITY);
+        let mut buf = Vec::with_capacity(BUF_CAP);
         buf.extend_from_slice(&format!("*{}\r\n", self.len()).into_bytes());
         for frame in self.0 {
             buf.extend_from_slice(&frame.encode());

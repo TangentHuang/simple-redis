@@ -1,6 +1,6 @@
 use crate::resp::{
     calc_total_length, parse_length, RespDecode, RespEncode, RespError, RespFrame, SimpleString,
-    BUF_CAPACITY, CRLF_LEN,
+    BUF_CAP, CRLF_LEN,
 };
 use bytes::{Buf, BytesMut};
 use std::collections::BTreeMap;
@@ -18,7 +18,7 @@ impl RespMap {
 // - map: "%<number-of-entries>\r\n<key-1><value-1>...<key-n><value-n>"
 impl RespEncode for RespMap {
     fn encode(self) -> Vec<u8> {
-        let mut buf = Vec::with_capacity(BUF_CAPACITY);
+        let mut buf = Vec::with_capacity(BUF_CAP);
         buf.extend_from_slice(&format!("%{}\r\n", self.len()).into_bytes());
         for (key, value) in self.0 {
             buf.extend_from_slice(&SimpleString::new(key).encode());
